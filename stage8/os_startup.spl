@@ -1,0 +1,89 @@
+
+load (9, 3);      //loading timer interrupt
+load (10, 4);
+
+load(11,5);     //loading the interrupt routine for int 1
+load(12,6);
+
+load(7,1);	//loading exception handler
+load(8,2);
+
+load(23,17);     //loading interrupt 7 routine
+load(24,18);
+
+breakpoint;
+
+[READY_LIST + 0] = 0;    //PID = 0
+
+breakpoint;
+
+load(25,21);  //loading the os_stratup code from the diskblocks 21,22,23
+load(26,22);
+load(27,23);
+
+breakpoint;
+
+PTBR = 1024; //starting address of page table base address register
+PTLR = 4;
+
+breakpoint;
+
+[PTBR + 0] = 25;  	//writing page table for init process
+[PTBR + 1] = "01";
+
+
+[PTBR + 2] = 26; 
+[PTBR + 3] = "01";
+
+
+[PTBR + 4] = 27; 
+[PTBR + 5] = "01";
+
+
+[PTBR + 6] = 28; 
+[PTBR + 7] = "01";
+
+breakpoint;
+
+[READY_LIST + 1 ] = 2;  //assigning it the running state
+
+breakpoint;
+
+SP = 3*512; //Logical address of the sp is the top of the third logical page
+
+breakpoint;
+
+
+[28 * 512] = 0;  //IP value is fetched from the stack top so it is assigned to be zero
+
+breakpoint;
+
+load(5,19); //loading the Fat table from the diskblock 19 to the memory page 5
+load(6,20); //loading the diskfreelist form 20 to the memory page 6
+
+
+alias counter S0;			
+counter = 0;
+while ( counter <  128) do			// 64 entries, each of size 2 words
+	[ FILE_TABLE + counter + 0] = -1;	// Set FAT Index to -1
+	[ FILE_TABLE + counter + 1] =  0;	// Set File Open Count to 0
+	counter = counter + 2;			// Move to next entry
+endwhile;	
+
+//alias counter S0;
+counter = 15;
+while(counter <= 30) do
+	[ READY_LIST + counter ] = -1;
+	counter = counter + 1;
+endwhile; 
+
+load(13,7);    //loading interrupt rountine for interrupt 2
+load(14,8);
+
+load(15,9);     //loading interrupt rountine for interrupt 3
+load(16,10);
+
+load(17,11);     //loading interrupt rountine for interrupt 4
+load(18,12);
+
+ireturn;

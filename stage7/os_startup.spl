@@ -1,0 +1,64 @@
+
+load (9, 3);      //loading timer interrupt
+load (10, 4);
+
+load(11,5);     //loading the interrupt routine for int 1
+load(12,6);
+
+load(7,1);	//loading exception handler
+load(8,2);
+
+load(23,17);     //loading interrupt 7 routine
+load(24,18);
+
+breakpoint;
+
+[READY_LIST + 0] = 0;    //PID = 0
+
+breakpoint;
+
+load(25,21);  //loading the os_stratup code from the diskblocks 21,22,23
+load(26,22);
+load(27,23);
+
+breakpoint;
+
+PTBR = 1024; //starting address of page table base address register
+PTLR = 4;
+
+breakpoint;
+
+[PTBR + 0] = 25;  	//writing page table for init process
+[PTBR + 1] = "01";
+
+
+[PTBR + 2] = 26; 
+[PTBR + 3] = "01";
+
+
+[PTBR + 4] = 27; 
+[PTBR + 5] = "01";
+
+
+[PTBR + 6] = 28; 
+[PTBR + 7] = "01";
+
+breakpoint;
+
+[READY_LIST + 1 ] = 2;  //assigning it the running state
+
+breakpoint;
+
+SP = 3*512; //Logical address of the sp is the top of the third logical page
+
+breakpoint;
+
+
+[28 * 512] = 0;  //IP value is fetched from the stack top so it is assigned to be zero
+
+breakpoint;
+
+load(5,19); //loading the Fat table from the diskblock 19 to the memory page 5
+load(6,20); //loading the Fat table from the diskblock 19 to the memory page 5
+
+ireturn;

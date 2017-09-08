@@ -1,0 +1,15 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512); //calculating the physical address of the stack top
+
+
+alias sysCallNo S1;
+
+// Get system call no. from the stack and put it in a register
+// Get arguments from stack and put it in registers
+
+sysCallNo = [physicalSP-1];     //getting system call number from stack
+
+if ( sysCallNo == 8) then
+	
+
+endif;

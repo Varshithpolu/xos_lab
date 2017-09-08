@@ -1,0 +1,93 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512); //calculating the physical address of the stack top
+
+
+alias sysCallNo S1;
+
+// Get system call no. from the stack and put it in a register
+// Get arguments from stack and put it in registers
+
+sysCallNo = [physicalSP-1];
+
+alias filename S2;
+
+filename = [physicalSP-3];
+
+breakpoint;
+
+if ( sysCallNo == 1) then
+	alias temp S3;
+	temp = FAT;
+	while (temp < 6 * 512) do
+		if ([temp] == filename) then
+			[physicalSP -2] = 0;
+			ireturn;   //return after pushing 0 in the stack
+		endif;
+		temp = temp + 8;
+	endwhile;
+
+	breakpoint;
+
+	temp = 6*512;
+	alias freeblock S4;
+	freeblock = -1;
+	while(temp < 6*512 + 448) do
+		if ( [temp] == 0 ) then
+			freeblock = temp - 6*512;	
+			break;
+		endif;
+		temp = temp+1;
+	endwhile;
+
+	breakpoint;
+
+	if (freeblock == -1) then
+		[physicalSP -2] = -1;
+		ireturn;	//return after pushing -1 in the stack
+	endif;
+	temp = FAT;
+	alias freeentry S5;
+	freeentry = -1;
+	while (temp < 6*512) do
+		if ([temp+2] == -1) then
+			freeentry = temp;
+			break;
+		endif;
+		temp = temp + 8;
+	endwhile;
+
+	breakpoint;
+
+	if(freeentry == -1) then
+		[physicalSP -2] = -1;
+		ireturn;  //return after pushing -1 in the stack
+	else
+		[freeentry] = filename;
+		[freeentry + 1] = 0 ;
+		[freeentry + 2] = freeblock;
+		load(1,freeblock);
+	endif;
+
+	breakpoint;
+
+	temp = 512;
+	while(temp < 2*512) do
+		[temp] = -1;
+		temp = temp + 1;
+	endwhile;
+
+	breakpoint;
+
+	store(1,freeblock);
+	[6*512 + freeblock ] = 1;
+	store(5,19); //storing back the Fat table from the diskblock 19 to the memory page 5	
+	store(6,20); //storing back the Fat table from the diskblock 19 to the memory page 5
+	[physicalSP -2] = 0;
+	ireturn;  //return with 0
+endif;
+if ( sysCallNo == 4) then
+	print(sysCallNo);	
+endif;	
+ireturn;
+
+

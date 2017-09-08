@@ -1,0 +1,11 @@
+
+load --int=7 $HOME/myxos/lab/stage7/int7.xsm
+load --exhandler $HOME/myxos/lab/stage7/exhandler.xsm
+./spl --os $lab/stage7/os_startup.spl
+load --os $lab/stage7/os_startup.xsm
+./spl --int=1 $lab/stage7/int_1.spl
+load --int=1 $lab/stage7/int1.xsm
+./apl $lab/stage7/test.apl
+
+copy 19 19 $lab/stage7/test.dat
+

@@ -1,0 +1,8 @@
+
+load --init $HOME/myxos/lab/stage6/odd.xsm
+load --exec $HOME/myxos/lab/stage6/even.xsm
+load --int=timer $HOME/lab/stage6/timer.xsm
+load --int=7 $HOME/myxos/lab/stage5/int7.xsm
+load --exhandler $HOME/myxos/lab/stage5/exhandler.xsm
+load --os $HOME/myxos/lab/stage6/os_startup.xsm
+

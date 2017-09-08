@@ -1,0 +1,17 @@
+load --exhandler $lab/stage8/exhandler.xsm
+load --int=1 $lab/stage8/int1.xsm
+load --int=7 $lab/stage8/int7.xsm
+load --os $lab/stage8/os_startup.xsm
+load --init $lab/stage8/create.xsm
+load --int=2 $lab/stage8/int2.xsm
+load --int=3 $lab/stage8/int3.xsm
+load --int=4 $lab/stage8/int4.xsm  
+
+to test delete
+
+load --init $lab/stage8/delete.xsm
+
+to test delete while open
+
+load --init $lab/stage8/delete_while_open.xsm
+

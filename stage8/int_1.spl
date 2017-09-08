@@ -1,0 +1,158 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512); //calculating the physical address of the stack top
+
+
+alias sysCallNo S1;
+
+// Get system call no. from the stack and put it in a register
+// Get arguments from stack and put it in registers
+
+sysCallNo = [physicalSP-1];     //getting system call number from stack
+
+alias filename S2;
+
+filename = [physicalSP-3];	//getting arguments from stack
+
+breakpoint;
+
+if ( sysCallNo == 1) then	
+	alias temp S3;
+	temp = FAT;
+	while (temp < 6 * 512) do		//checking if the file to be created already exists
+		if ([temp] == filename) then
+			[physicalSP -2] = 0;
+			ireturn;   //return after pushing 0 in the stack
+		endif;
+		temp = temp + 8;
+	endwhile;
+
+	breakpoint;
+
+	temp = 6*512;
+	alias freeblock S4;
+	freeblock = -1;
+	while(temp < 6*512 + 448) do		//finding a free block in the disk free list
+		if ( [temp] == 0 ) then
+			freeblock = temp - 6*512;	
+			break;
+		endif;
+		temp = temp+1;
+	endwhile;
+
+	breakpoint;
+
+	if (freeblock == -1) then
+		[physicalSP -2] = -1;
+		ireturn;	//return after pushing -1 in the stack
+	endif;
+	temp = FAT;
+	alias freeentry S5;
+	freeentry = -1;
+	while (temp < 6*512) do		//finding a fat entry for the free block
+		if ([temp+2] == -1) then
+			freeentry = temp;
+			break;
+		endif;
+		temp = temp + 8;
+	endwhile;
+
+	breakpoint;
+
+	if(freeentry == -1) then
+		[physicalSP -2] = -1;
+		ireturn;  //return after pushing -1 in the stack
+	else
+		[freeentry] = filename;			//setting up the fat entry details
+		[freeentry + 1] = 0 ;
+		[freeentry + 2] = freeblock;
+		load(1,freeblock);
+	endif;
+
+	breakpoint;
+
+	temp = 512;
+	while(temp < 2*512) do
+		[temp] = -1;
+		temp = temp + 1;
+	endwhile;
+
+	breakpoint;
+
+	store(1,freeblock);
+	[6*512 + freeblock ] = 1;
+	store(5,19); //storing back the Fat table from the diskblock 19 to the memory page 5	
+	store(6,20); //storing back the Fat table from the diskblock 19 to the memory page 5
+	[physicalSP -2] = 0;
+	ireturn;  //return with 0
+endif;
+if ( sysCallNo == 4) then
+	alias temp S3;
+	alias FAT_INDEX S4;
+	FAT_INDEX = -1;
+	temp = FAT;		
+	while (temp < 6 * 512) do	//checking if the file with the given name exists 
+		if ([temp] == filename) then
+			FAT_INDEX = (temp-FAT)/8;	
+		endif;
+		temp = temp + 8;
+	endwhile;
+	if (FAT_INDEX == -1) then
+		[physicalSP -2] = -1;  //failure if a file with that name doesn't exist 
+		ireturn;   //return after pushing -1 in the stack
+	endif;	
+	alias counter S5;			
+	counter = 0;
+	while ( counter <  128) do
+		//print("it is here");
+		//print(FAT_INDEX);
+		if([ FILE_TABLE + counter] == FAT_INDEX) then	
+			[physicalSP - 2] = -1;
+			//print("opened");
+			//print(counter);
+			ireturn;   //this indicates that file is opened by some process so we can't delete it
+		endif;	
+		counter = counter + 2;			
+	endwhile;
+	alias basicblock S6;
+	basicblock  = [FAT + FAT_INDEX*8 + 2 ];
+	load(1,basicblock);    //loading the basic block such that we can delete all the blocks of the file
+	//alias counter S7;
+	//alias temp S8;
+	alias counter_2 S9;
+	counter = 512;
+	while(counter < 768) do		//there are 256 basic blocks so we iterate over them to put empty string in all of them
+		temp = [counter];
+		if(temp == -1) then
+			counter = counter + 1;
+			continue;
+		endif;
+		load(1,temp);
+		counter_2 = 512;
+		while(counter_2 < 1024) do		//putting empty string in data blocks of the file one by one
+			[counter_2] = "";
+			counter_2 = counter_2 + 1;
+		endwhile;
+		counter = counter + 1;
+		store(1,temp);
+		load(1,basicblock);
+		[ 6 * 512 + temp] = 0;
+	endwhile;
+	counter = 512;
+	load(1,basicblock);	//changing all the words in the basicblock to empty words
+	while(counter < 1024) do
+		[counter] = "";
+		counter = counter + 1 ;
+	endwhile;
+	[6*512 + basicblock] = 0;	
+	[FAT + FAT_INDEX*8 ] = -1;
+	[FAT + FAT_INDEX*8 + 2 ] = -1;
+	store(1,basicblock);
+	store(5,19); //storing the Fat table to the diskblock 19 from the memory page 5
+	store(6,20); //storing the diskfreelist to 20 from the memory page 6
+	[physicalSP -2] = 0;
+	//print("it is deleted");
+	ireturn;  //return with 0
+endif;	
+ireturn;
+
+
